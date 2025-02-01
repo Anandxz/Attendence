@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #0062ff, #00c6ff, #0077ff, #00a8ff);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            padding: 2rem;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Section styling */
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid layout for buttons */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        /* Button styling */
+        .btn {
+            background: white;
+            border: none;
+            padding: 1.5rem;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #0062ff, #00c6ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            color: white;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Attendance section styling */
+        .attendance-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .roll-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #1a1a1a;
+        }
+
+        .attendance-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .present-btn, .absent-btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .present-btn {
+            background: #22c55e;
+            color: white;
+        }
+
+        .absent-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .present-btn:hover, .absent-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Navigation breadcrumb */
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .breadcrumb-item {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .breadcrumb-separator {
+            color: #999;
+        }
+
+        /* Header styling */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Attendance Tracking System</h1>
+            <p>Select options to begin recording attendance</p>
+        </div>
+
+        <div class="breadcrumb">
+            <span class="breadcrumb-item">Home</span>
+        </div>
+
+        <!-- Year Selection Section -->
+        <div class="section active" id="yearSection">
+            <div class="grid">
+                <button class="btn" onclick="selectYear('1st Year')"><span>1st Year</span></button>
+                <button class="btn" onclick="selectYear('2nd Year')"><span>2nd Year</span></button>
+                <button class="btn" onclick="selectYear('3rd Year')"><span>3rd Year</span></button>
+                <button class="btn" onclick="selectYear('4th Year')"><span>4th Year</span></button>
+            </div>
+        </div>
+
+        <!-- Department Selection Section -->
+        <div class="section" id="departmentSection">
+            <div class="grid">
+                <button class="btn" onclick="selectDepartment('CSE')"><span>CSE</span></button>
+                <button class="btn" onclick="selectDepartment('CSE AIDS')"><span>CSE AIDS</span></button>
+                <button class="btn" onclick="selectDepartment('ECE')"><span>ECE</span></button>
+                <button class="btn" onclick="selectDepartment('ECE-VLSI')"><span>ECE-VLSI</span></button>
+            </div>
+        </div>
+
+        <!-- Attendance Recording Section -->
+        <div class="section" id="attendanceSection">
+            <div class="attendance-card">
+                <div class="roll-number">Roll No: <span id="currentRoll">1</span></div>
+                <div class="attendance-buttons">
+                    <button class="present-btn" onclick="markAttendance('present')">Present</button>
+                    <button class="absent-btn" onclick="markAttendance('absent')">Absent</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentYear = '';
+        let currentDepartment = '';
+        let currentRoll = 1;
+        let attendanceData = [];
+
+        // Function to update breadcrumb
+        function updateBreadcrumb() {
+            const breadcrumb = document.querySelector('.breadcrumb');
+            let html = '<span class="breadcrumb-item">Home</span>';
+            
+            if (currentYear) {
+                html += '<span class="breadcrumb-separator">></span>';
+                html += `<span class="breadcrumb-item">${currentYear}</span>`;
+            }
+            
+            if (currentDepartment) {
+                html += '<span class="breadcrumb-separator">></span>';
+                html += `<span class="breadcrumb-item">${currentDepartment}</span>`;
+            }
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        // Function to show a specific section
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Year selection handler
+        function selectYear(year) {
+            currentYear = year;
+            updateBreadcrumb();
+            showSection('departmentSection');
+        }
+
+        // Department selection handler
+        function selectDepartment(department) {
+            currentDepartment = department;
+            currentRoll = 1;
+            updateBreadcrumb();
+            showSection('attendanceSection');
+            document.getElementById('currentRoll').textContent = currentRoll;
+        }
+
+        // Attendance marking handler
+        function markAttendance(status) {
+            // Record the attendance
+            attendanceData.push({
+                year: currentYear,
+                department: currentDepartment,
+                rollNo: currentRoll,
+                status: status,
+                timestamp: new Date().toISOString()
+            });
+
+            // Send data to Google Sheets (you'll need to implement this)
+            saveToGoogleSheets({
+                year: currentYear,
+                department: currentDepartment,
+                rollNo: currentRoll,
+                status: status,
+                timestamp: new Date().toISOString()
+            });
+
+            // Move to next roll number
+            currentRoll++;
+            document.getElementById('currentRoll').textContent = currentRoll;
+        }
+
+        // Function to save data to Google Sheets
+        function saveToGoogleSheets(data) {
+            // This is where you would implement the Google Sheets API integration
+            // For now, we'll just log the data
+            console.log('Saving to Google Sheets:', data);
+        }
+    </script>
+</body>
+</html>
