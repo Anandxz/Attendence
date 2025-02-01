@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker</title>
+    <style>
+        /* Previous styles remain the same */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Adding styles for the setup section */
+        .setup-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .setup-section input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .setup-section button {
+            margin-top: 10px;
+        }
+
+        /* Rest of your previous styles */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Setup Section for Google Sheet Configuration -->
+        <div class="setup-section" id="setupSection">
+            <h2>Google Sheet Setup</h2>
+            <p>Follow these steps to set up your Google Sheet:</p>
+            <ol>
+                <li>Open your Google Sheet for 1st Year Maths attendance</li>
+                <li>Click File > Share > Publish to web</li>
+                <li>Choose 'Entire Document' and 'Web page'</li>
+                <li>Click 'Publish' and copy the URL</li>
+                <li>Click Tools > Script editor</li>
+                <li>Paste the code below into the script editor:</li>
+            </ol>
+            <textarea readonly style="width: 100%; height: 200px; margin: 10px 0;">
+function doGet(e) {
+  return HtmlService.createHtmlOutput("Success!");
+}
+
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  sheet.appendRow([
+    data.date,
+    data.time,
+    data.year,
+    data.department,
+    data.subject,
+    data.roll,
+    data.name,
+    data.status
+  ]);
+  
+  return HtmlService.createHtmlOutput("Success!");
+}
+            </textarea>
+            <p>After setting up the script:</p>
+            <ol>
+                <li>Click 'Deploy' > 'New deployment'</li>
+                <li>Choose 'Web app'</li>
+                <li>Set 'Execute as' to 'Me'</li>
+                <li>Set 'Who has access' to 'Anyone'</li>
+                <li>Click 'Deploy' and authorize the app</li>
+                <li>Copy the Web app URL and paste it below:</li>
+            </ol>
+            <input type="text" id="scriptUrl" placeholder="Paste your Google Apps Script Web App URL here">
+            <button onclick="saveScriptUrl()">Save URL</button>
+        </div>
+
+        <!-- Rest of your previous HTML code remains the same -->
+        
+        <!-- Modified script section -->
+        <script>
+            // Previous JavaScript code remains the same until the markAttendance function
+
+            function saveScriptUrl() {
+                const url = document.getElementById('scriptUrl').value;
+                if (url) {
+                    localStorage.setItem('scriptUrl', url);
+                    document.getElementById('setupSection').style.display = 'none';
+                    alert('Script URL saved! You can now take attendance.');
+                } else {
+                    alert('Please enter a valid URL');
+                }
+            }
+
+            async function markAttendance(status) {
+                const student = students[currentState.currentStudentIndex];
+                const timestamp = new Date();
+                const attendanceRecord = {
+                    date: timestamp.toLocaleDateString(),
+                    time: timestamp.toLocaleTimeString(),
+                    year: currentState.year,
+                    department: currentState.department,
+                    subject: currentState.subject,
+                    roll: student.roll,
+                    name: student.name,
+                    status: status
+                };
+
+                // Store in local array
+                currentState.attendanceData.push(attendanceRecord);
+
+                // Send to Google Sheet
+                const scriptUrl = localStorage.getItem('scriptUrl');
+                if (scriptUrl) {
+                    try {
+                        const response = await fetch(scriptUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(attendanceRecord)
+                        });
+                        console.log('Attendance recorded in Google Sheet');
+                    } catch (error) {
+                        console.error('Error sending to Google Sheet:', error);
+                    }
+                }
+
+                currentState.currentStudentIndex++;
+                showNextStudent();
+            }
+
+            // Check for script URL on page load
+            window.onload = function() {
+                const scriptUrl = localStorage.getItem('scriptUrl');
+                if (scriptUrl) {
+                    document.getElementById('setupSection').style.display = 'none';
+                }
+            };
+
+            // Rest of your previous JavaScript code remains the same
+        </script>
+    </div>
+</body>
+</html>
