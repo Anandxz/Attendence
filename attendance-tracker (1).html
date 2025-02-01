@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .datetime-display {
+            text-align: right;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .previous-btn {
+            background-color: #6c757d;
+            margin-bottom: 20px;
+        }
+
+        .attendance-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .attendance-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .present-btn {
+            background-color: #28a745;
+        }
+
+        .absent-btn {
+            background-color: #dc3545;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .result-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .result-table th, .result-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .result-table th {
+            background-color: #f8f9fa;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        #copyButton {
+            background-color: #28a745;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="datetime-display" id="datetime"></div>
+        
+        <button id="previousBtn" class="previous-btn hidden">Previous</button>
+        
+        <!-- Year Selection -->
+        <div id="yearSelection" class="button-grid">
+            <button onclick="showDepartments('1')">1st Year</button>
+            <button onclick="showDepartments('2')">2nd Year</button>
+            <button onclick="showDepartments('3')">3rd Year</button>
+            <button onclick="showDepartments('4')">4th Year</button>
+        </div>
+
+        <!-- Department Selection -->
+        <div id="departmentSelection" class="button-grid hidden">
+            <button onclick="showSubjects('CSE')">CSE</button>
+            <button onclick="showSubjects('CSE-AIDS')">CSE-AIDS</button>
+            <button onclick="showSubjects('ECE')">ECE</button>
+            <button onclick="showSubjects('ECE-VLSI')">ECE-VLSI</button>
+        </div>
+
+        <!-- Subject Selection -->
+        <div id="subjectSelection" class="button-grid hidden">
+            <button onclick="startAttendance('DD')">DD</button>
+            <button onclick="startAttendance('CS')">CS</button>
+            <button onclick="startAttendance('ECA')">ECA</button>
+            <button onclick="startAttendance('MATHS')">MATHS</button>
+            <button onclick="startAttendance('PHYSICS')">PHYSICS</button>
+            <button onclick="startAttendance('YOGA')">YOGA</button>
+            <button onclick="startAttendance('KOREAN')">KOREAN</button>
+            <button onclick="startAttendance('ENGLISH')">ENGLISH</button>
+            <button onclick="startAttendance('BAHNG')">BAHNG</button>
+            <button onclick="startAttendance('BAROSHA')">BAROSHA</button>
+            <button onclick="startAttendance('LAHSUN')">LAHSUN</button>
+            <button onclick="startAttendance('PYAZ')">PYAZ</button>
+        </div>
+
+        <!-- Attendance Taking Interface -->
+        <div id="attendanceInterface" class="hidden">
+            <div class="attendance-card">
+                <h2>Student Information</h2>
+                <p id="studentName">Name: </p>
+                <p id="studentRoll">Roll Number: </p>
+                <div class="attendance-buttons">
+                    <button onclick="markAttendance('Present')" class="present-btn">Present</button>
+                    <button onclick="markAttendance('Absent')" class="absent-btn">Absent</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Interface -->
+        <div id="resultsInterface" class="hidden">
+            <h2>Attendance Summary</h2>
+            <div id="attendanceSummary"></div>
+            <div class="export-section">
+                <h3>Export Data</h3>
+                <p>Copy this data and paste it into your Google Sheet:</p>
+                <textarea id="exportData" rows="10" style="width: 100%; margin-top: 10px;" readonly></textarea>
+                <button id="copyButton" onclick="copyToClipboard()">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('en-US', options);
+        }
+        
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // State management
+        let currentState = {
+            year: '',
+            department: '',
+            subject: '',
+            currentStudentIndex: 0,
+            attendanceData: [],
+            date: new Date()
+        };
+
+        // Sample student data - Replace with your actual student data
+        const students = [
+            { name: "John Doe", roll: "CSE001" },
+            { name: "Jane Smith", roll: "CSE002" },
+            { name: "Alice Johnson", roll: "CSE003" },
+            { name: "Bob Wilson", roll: "CSE004" },
+            { name: "Carol Brown", roll: "CSE005" }
+        ];
+
+        const navigationStack = [];
+
+        function showDepartments(year) {
+            currentState.year = year;
+            navigationStack.push('year');
+            document.getElementById('yearSelection').classList.add('hidden');
+            document.getElementById('departmentSelection').classList.remove('hidden');
+            document.getElementById('previousBtn').classList.remove('hidden');
+        }
+
+        function showSubjects(department) {
+            currentState.department = department;
+            navigationStack.push('department');
+            document.getElementById('departmentSelection').classList.add('hidden');
+            document.getElementById('subjectSelection').classList.remove('hidden');
+        }
+
+        function startAttendance(subject) {
+            currentState.subject = subject;
+            navigationStack.push('subject');
+            document.getElementById('subjectSelection').classList.add('hidden');
+            document.getElementById('attendanceInterface').classList.remove('hidden');
+            showNextStudent();
+        }
+
+        function showNextStudent() {
+            if (currentState.currentStudentIndex < students.length) {
+                const student = students[currentState.currentStudentIndex];
+                document.getElementById('studentName').textContent = `Name: ${student.name}`;
+                document.getElementById('studentRoll').textContent = `Roll Number: ${student.roll}`;
+            } else {
+                showResults();
+            }
+        }
+
+        function markAttendance(status) {
+            const student = students[currentState.currentStudentIndex];
+            const timestamp = new Date();
+            currentState.attendanceData.push({
+                name: student.name,
+                roll: student.roll,
+                status: status,
+                date: timestamp.toLocaleDateString(),
+                time: timestamp.toLocaleTimeString()
+            });
+
+            currentState.currentStudentIndex++;
+            showNextStudent();
+        }
+
+        function showResults() {
+            document.getElementById('attendanceInterface').classList.add('hidden');
+            document.getElementById('resultsInterface').classList.remove('hidden');
+
+            // Create formatted data for Google Sheets
+            const headerRow = ['Date', 'Time', 'Year', 'Department', 'Subject', 'Roll No', 'Name', 'Status'];
+            const rows = currentState.attendanceData.map(record => [
+                record.date,
+                record.time,
+                currentState.year,
+                currentState.department,
+                currentState.subject,
+                record.roll,
+                record.name,
+                record.status
+            ]);
+
+            // Create TSV (Tab-Separated Values) format for easy pasting into Google Sheets
+            const tsvContent = [headerRow, ...rows]
+                .map(row => row.join('\t'))
+                .join('\n');
+
+            document.getElementById('exportData').value = tsvContent;
+
+            // Display summary table
+            const summaryHTML = `
+                <table class="result-table">
+                    <tr>
+                        <th>Total Students</th>
+                        <td>${students.length}</td>
+                    </tr>
+                    <tr>
+                        <th>Present</th>
+                        <td>${currentState.attendanceData.filter(r => r.status === 'Present').length}</td>
+                    </tr>
+                    <tr>
+                        <th>Absent</th>
+                        <td>${currentState.attendanceData.filter(r => r.status === 'Absent').length}</td>
+                    </tr>
+                </table>`;
+
+            document.getElementById('attendanceSummary').innerHTML = summaryHTML;
+        }
+
+        function copyToClipboard() {
+            const exportData = document.getElementById('exportData');
+            exportData.select();
+            document.execCommand('copy');
+            alert('Data copied to clipboard! You can now paste it into Google Sheets.');
+        }
+
+        function resetApplication() {
+            currentState = {
+                year: '',
+                department: '',
+                subject: '',
+                currentStudentIndex: 0,
+                attendanceData: [],
+                date: new Date()
+            };
+            navigationStack.length = 0;
+            
+            document.getElementById('yearSelection').classList.remove('hidden');
+            document.getElementById('departmentSelection').classList.add('hidden');
+            document.getElementById('subjectSelection').classList.add('hidden');
+            document.getElementById('attendanceInterface').classList.add('hidden');
+            document.getElementById('resultsInterface').classList.add('hidden');
+            document.getElementById('previousBtn').classList.add('hidden');
+        }
+
+        document.getElementById('previousBtn').addEventListener('click', () => {
+            const lastState = navigationStack.pop();
+            
+            switch(lastState) {
+                case 'year':
+                    document.getElementById('yearSelection').classList.remove('hidden');
+                    document.getElementById('departmentSelection').classList.add('hidden');
+                    document.getElementById('previousBtn').classList.add('hidden');
+                    break;
+                case 'department':
+                    document.getElementById('departmentSelection').classList.remove('hidden');
+                    document.getElementById('subjectSelection').classList.add('hidden');
+                    break;
+                case 'subject':
+                    document.getElementById('subjectSelection').classList.remove('hidden');
+                    document.getElementById('attendanceInterface').classList.add('hidden');
+                    currentState.currentStudentIndex = 0;
+                    currentState.attendanceData = [];
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
